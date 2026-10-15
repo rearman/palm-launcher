@@ -1,15 +1,14 @@
 package com.rearman.palmlauncher
 
-import kotlin.math.roundToInt
-
 const val UNFILED = 0   // fixed category id, cannot be renamed or deleted, always last in categories
 const val ALL = -1      // filter value: show all apps
 
 enum class ViewMode { GRID, LIST }
 
-// Text and icon size steps. scale multiplies the Normal size.
-enum class Size(val label: String, val scale: Float) {
-	SMALL("Small", 0.8f), NORMAL("Normal", 1f), LARGE("Large", 1.25f);
+// Text and icon size steps. scale multiplies the Normal size. palmPx is the Palm Font text size in
+// Palm px, the same as the Datebook Font sizes.
+enum class Size(val label: String, val scale: Float, val palmPx: Float) {
+	SMALL("Small", 0.8f, 13f), NORMAL("Normal", 1f, 16f), LARGE("Large", 1.25f, 20f);
 
 	companion object {
 		// An unknown or missing name (state saved by older builds) gives NORMAL.
@@ -24,10 +23,6 @@ fun columnWidths(entryWidths: List<Int>, cols: Int, max: Int): IntArray? {
 	entryWidths.forEachIndexed { i, x -> w[i % cols] = maxOf(w[i % cols], x) }
 	return if (w.sum() <= max) w else null
 }
-
-// Palm Font text size in screen px: a whole number of px per font pixel (the Palm OS font has 16
-// font pixels per em), so every glyph pixel is the same size. Never below 16 px.
-fun palmFontPx(px: Float): Float = maxOf(1, (px / 16).roundToInt()) * 16f
 
 data class Category(val id: Int, val name: String)
 

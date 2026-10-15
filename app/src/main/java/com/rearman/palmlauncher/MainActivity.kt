@@ -36,9 +36,6 @@ class MainActivity : Activity() {
 	// Damien Guard's Palm OS font, the same files as in Datebook (assets/fonts).
 	private val palmRegular by lazy { Typeface.createFromAsset(assets, "fonts/palm-os.ttf") }
 	private val palmBold by lazy { Typeface.createFromAsset(assets, "fonts/palm-os-bold.ttf") }
-	// Palm capitals are 0.44 em tall, Roboto capitals 0.71 em, so Palm Font text is this much larger
-	// to look the same size. Tune by eye on the device.
-	private val palmFontScale = 1.6f
 
 	private val match = ViewGroup.LayoutParams.MATCH_PARENT
 	private val wrap = ViewGroup.LayoutParams.WRAP_CONTENT
@@ -127,24 +124,24 @@ class MainActivity : Activity() {
 
 	private fun rule() = View(this).apply { setBackgroundColor(Color.BLACK) }
 
-	// Sets the text size in sp and the face. With Palm Font the size grows by palmFontScale and snaps
-	// with palmFontPx. Limit: near a step boundary, two Text Size steps can give the same snapped size.
-	// Call it after the text is set.
+	// Sets the size and face of launcher text; call it after the text is set. The system font is `sp`
+	// in size. Palm Font uses the Datebook sizes for all text: Text Size gives 13, 16 or 20 Palm px,
+	// where the shorter screen side is 160 Palm px (Palm IIIxe).
 	private fun TextView.font(sp: Float, bold: Boolean) {
 		if (!state.palmFont) {
 			textSize = sp
 			typeface = if (bold) Typeface.DEFAULT_BOLD else Typeface.DEFAULT
 			return
 		}
-		val px = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_SP, sp * palmFontScale, resources.displayMetrics)
-		setTextSize(TypedValue.COMPLEX_UNIT_PX, palmFontPx(px))
+		val dm = resources.displayMetrics
+		setTextSize(TypedValue.COMPLEX_UNIT_PX, state.textSize.palmPx * minOf(dm.widthPixels, dm.heightPixels) / 160f)
 		typeface = if (bold) palmBold else palmRegular
 		includeFontPadding = false
-		// The Palm OS font has no ▾ glyph, so Android draws it from the system font at the larger
-		// Palm size. This shrinks it back to its system-font size.
+		// The Palm OS font has no ▾ glyph, so Android draws it from the system font, which draws it
+		// larger. As in Datebook, this shrinks it to 0.6 of the text size.
 		val i = text.indexOf('▾')
 		if (i >= 0) text = SpannableString(text).apply {
-			setSpan(RelativeSizeSpan(1 / palmFontScale), i, i + 1, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
+			setSpan(RelativeSizeSpan(0.6f), i, i + 1, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
 		}
 	}
 

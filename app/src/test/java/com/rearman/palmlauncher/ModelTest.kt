@@ -222,11 +222,4 @@ class ModelTest {
 		assertArrayEquals(intArrayOf(0, 0), columnWidths(emptyList(), 2, 100))
 		assertNull(columnWidths(listOf(60, 50), 2, 100))
 	}
-
-	@Test
-	fun palmFontPxSnaps() {
-		assertEquals(64f, palmFontPx(63f), 0f)
-		assertEquals(48f, palmFontPx(50f), 0f)
-		assertEquals(16f, palmFontPx(3f), 0f)
-	}
 }
