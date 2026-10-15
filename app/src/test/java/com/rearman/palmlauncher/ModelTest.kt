@@ -109,14 +109,34 @@ class ModelTest {
 	}
 
 	@Test
-	fun addCategoryUsesMaxIdPlusOneBeforeUnfiled() {
+	fun addCategoryUsesMaxIdPlusOneAndSorts() {
 		val s = LauncherState.defaults()
-		val c = s.addCategory("Test")
+		val c = s.addCategory("apps")
 		assertEquals(5, c.id)
-		assertEquals("Test", c.name)
-		assertEquals(6, s.categories.size)
-		assertEquals(c, s.categories[s.categories.size - 2])
+		assertEquals(listOf("apps", "Games", "Main", "System", "Utilities", "Unfiled"), s.categories.map { it.name })
+
+		s.addCategory("Zebra")
+		assertEquals(listOf("apps", "Games", "Main", "System", "Utilities", "Zebra", "Unfiled"), s.categories.map { it.name })
 		assertEquals(UNFILED, s.categories.last().id)
+	}
+
+	@Test
+	fun renameCategoryResorts() {
+		val s = LauncherState.defaults()
+		s.renameCategory(1, "Xylo")
+		assertEquals(listOf("Main", "System", "Utilities", "Xylo", "Unfiled"), s.categories.map { it.name })
+	}
+
+	@Test
+	fun constructorSortsCategories() {
+		val s = LauncherState(
+			mutableListOf(Category(UNFILED, "Unfiled"), Category(7, "beta"), Category(8, "Alpha")),
+			mutableMapOf(),
+			arrayOfNulls(4),
+			ALL,
+			ViewMode.GRID
+		)
+		assertEquals(listOf("Alpha", "beta", "Unfiled"), s.categories.map { it.name })
 	}
 
 	@Test

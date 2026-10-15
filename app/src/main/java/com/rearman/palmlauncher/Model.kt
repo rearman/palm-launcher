@@ -8,13 +8,17 @@ enum class ViewMode { GRID, LIST }
 data class Category(val id: Int, val name: String)
 
 class LauncherState(
-	val categories: MutableList<Category>,     // display order; Unfiled always last
+	val categories: MutableList<Category>,     // sorted by name; Unfiled always last
 	val assignments: MutableMap<String, Int>,  // component to category id; missing means Unfiled
 	val dock: Array<String?>,                  // size 4, component or null
 	var selected: Int,                         // ALL or a category id
 	var viewMode: ViewMode,
 ) {
 	var green = false  // Green LCD screen colors (saved by Store).
+
+	init {
+		sortCategories()
+	}
 
 	companion object {
 		// Games(1), Main(2), System(3), Utilities(4), Unfiled(0); empty assignments; dock of 4 nulls; ALL; GRID
@@ -64,8 +68,8 @@ class LauncherState(
 
 	fun addCategory(name: String): Category {
 		val category = Category((categories.maxOfOrNull { it.id } ?: 0) + 1, name)
-		val unfiled = categories.indexOfFirst { it.id == UNFILED }
-		if (unfiled < 0) categories.add(category) else categories.add(unfiled, category)
+		categories.add(category)
+		sortCategories()
 		return category
 	}
 
@@ -73,6 +77,12 @@ class LauncherState(
 		if (id == UNFILED) return
 		val index = categories.indexOfFirst { it.id == id }
 		if (index >= 0) categories[index] = categories[index].copy(name = name)
+		sortCategories()
+	}
+
+	// Sorts by name, case-insensitive; Unfiled stays last.
+	private fun sortCategories() {
+		categories.sortWith(compareBy<Category> { it.id == UNFILED }.thenBy(String.CASE_INSENSITIVE_ORDER) { it.name })
 	}
 
 	fun deleteCategory(id: Int) {
