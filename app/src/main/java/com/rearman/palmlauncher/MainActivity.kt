@@ -3,7 +3,9 @@ package com.rearman.palmlauncher
 import android.app.Activity
 import android.content.ActivityNotFoundException
 import android.content.BroadcastReceiver
+import android.content.Context
 import android.content.Intent
+import android.content.res.Configuration
 import android.graphics.Color
 import android.graphics.Typeface
 import android.net.Uri
@@ -35,6 +37,15 @@ class MainActivity : Activity() {
 	// The green is the Green LCD paper color of the Datebook app.
 	private fun paper() = if (state.green) 0xFFC9D3A8.toInt() else Color.WHITE
 	private fun dockColor() = if (state.green) 0xFFB5BF94.toInt() else 0xFFEEEEEE.toInt()
+
+	// Text Size multiplies the system font scale, so every sp size in the launcher follows it:
+	// labels, the top bar, popup menus and dialogs. A change of Text Size recreates the activity.
+	override fun attachBaseContext(base: Context) {
+		super.attachBaseContext(base)
+		applyOverrideConfiguration(Configuration().apply {
+			fontScale = base.resources.configuration.fontScale * Store.load(base).textSize.scale
+		})
+	}
 
 	override fun onCreate(savedInstanceState: Bundle?) {
 		super.onCreate(savedInstanceState)
@@ -153,7 +164,8 @@ class MainActivity : Activity() {
 					2 -> pickSize(this@MainActivity, "Text Size", state.textSize) { s ->
 						state.textSize = s
 						save()
-						render(keepScroll = true)
+						// attachBaseContext reads the new size.
+						recreate()
 					}
 					3 -> pickSize(this@MainActivity, "Icon Size", state.iconSize) { s ->
 						state.iconSize = s
@@ -215,11 +227,11 @@ class MainActivity : Activity() {
 		val label = TextView(this).apply {
 			text = e.label
 			if (grid) {
-				textSize = 12f * state.textSize.scale
+				textSize = 12f
 				gravity = Gravity.CENTER_HORIZONTAL
 				maxLines = 2
 			} else {
-				textSize = 15f * state.textSize.scale
+				textSize = 15f
 				setSingleLine(true)
 			}
 			ellipsize = TextUtils.TruncateAt.END
