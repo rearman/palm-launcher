@@ -190,7 +190,8 @@ class MainActivity : Activity() {
 		val cell = LinearLayout(this)
 		cell.orientation = if (grid) LinearLayout.VERTICAL else LinearLayout.HORIZONTAL
 		cell.gravity = if (grid) Gravity.CENTER_HORIZONTAL else Gravity.CENTER_VERTICAL
-		cell.setPadding(dp(6), dp(6), dp(6), dp(6))
+		val left = if (grid) dp(6) else dp(16)
+		cell.setPadding(left, dp(6), dp(6), dp(6))
 		val iconSize = if (grid) dp(48) else dp(32)
 		val icon = ImageView(this).apply { setImageDrawable(e.icon) }
 		cell.addView(icon, LinearLayout.LayoutParams(iconSize, iconSize))
