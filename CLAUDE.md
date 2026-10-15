@@ -22,4 +22,11 @@ Output: `app/build/outputs/apk/debug/app-debug.apk`. CI runs on each push to `ma
 
 ## Architecture
 
-`MainActivity` is the home activity (`MAIN` + `HOME` + `DEFAULT` in the manifest, `singleTask`). It queries all `MAIN`/`LAUNCHER` activities and rebuilds the list in `onResume`. The `<queries>` element in the manifest is required for that query on Android 11 and later.
+The function of the Palm III Applications screen: one A to Z list of all apps, filtered by category, with a dock of 4 apps at the bottom. All source is in `app/src/main/java/com/rearman/palmlauncher/`.
+
+- **`MainActivity`** is the home activity (`MAIN` + `HOME` + `DEFAULT` in the manifest, `singleTask`). `render()` rebuilds all views from `state` and `apps`. Call `save()` then `render()` after each state change. The app list is cached and reloads only from the package receiver (`Apps.watch`). Home pressed while the launcher has focus goes to the next category (`onNewIntent`, Launcher3 test: window focus and no `FLAG_ACTIVITY_BROUGHT_TO_FRONT`). Back does nothing.
+- **`Model.kt`** is pure Kotlin with no Android imports, so the JVM tests in `app/src/test/` cover it. `LauncherState` holds the categories, the app to category map, the 4 dock slots, the selected category and the view mode. Apps are keyed by `ComponentName.flattenToString()`. Categories have fixed ids, so a rename keeps the assignments. `UNFILED` (0) is fixed and last. `ALL` (-1) is a filter value only. An app with no assignment is in Unfiled.
+- **`Store.kt`** saves `LauncherState` as one JSON string in SharedPreferences `launcher`. Bad or missing data gives `LauncherState.defaults()`.
+- **`Apps.kt`** loads the `MAIN`/`LAUNCHER` activities and launches them. The `<queries>` element in the manifest is required for that query on Android 11 and later. `REQUEST_DELETE_PACKAGES` is required for the Delete (uninstall) menu item.
+- **`Dialogs.kt`** has the category picker and Edit Categories dialogs (platform `AlertDialog`).
+- Grid view has 4 columns, list view has 2. Both fill across, then down.
