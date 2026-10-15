@@ -22,7 +22,6 @@ import android.view.ViewGroup
 import android.widget.FrameLayout
 import android.widget.ImageView
 import android.widget.LinearLayout
-import android.widget.PopupMenu
 import android.widget.ScrollView
 import android.widget.TextView
 
@@ -43,11 +42,11 @@ class MainActivity : Activity() {
 	fun dp(v: Int) = (v * resources.displayMetrics.density).toInt()
 
 	// The green is the Green LCD paper color of the Datebook app.
-	private fun paper() = if (state.green) 0xFFC9D3A8.toInt() else Color.WHITE
+	internal fun paper() = if (state.green) 0xFFC9D3A8.toInt() else Color.WHITE
 	private fun dockColor() = if (state.green) 0xFFB5BF94.toInt() else 0xFFEEEEEE.toInt()
 
-	// Text Size multiplies the system font scale, so every sp size in the launcher follows it:
-	// labels, the top bar, popup menus and dialogs. A change of Text Size recreates the activity.
+	// Text Size multiplies the system font scale, so every sp size in the launcher follows it.
+	// A change of Text Size recreates the activity.
 	override fun attachBaseContext(base: Context) {
 		super.attachBaseContext(base)
 		applyOverrideConfiguration(Configuration().apply {
@@ -127,7 +126,7 @@ class MainActivity : Activity() {
 	// Sets the size and face of launcher text; call it after the text is set. The system font is `sp`
 	// in size. Palm Font uses the Datebook sizes for all text: Text Size gives 13, 16 or 20 Palm px,
 	// where the shorter screen side is 160 Palm px (Palm IIIxe).
-	private fun TextView.font(sp: Float, bold: Boolean) {
+	internal fun TextView.font(sp: Float, bold: Boolean) {
 		if (!state.palmFont) {
 			textSize = sp
 			typeface = if (bold) Typeface.DEFAULT_BOLD else Typeface.DEFAULT
@@ -137,12 +136,14 @@ class MainActivity : Activity() {
 		setTextSize(TypedValue.COMPLEX_UNIT_PX, state.textSize.palmPx * minOf(dm.widthPixels, dm.heightPixels) / 160f)
 		typeface = if (bold) palmBold else palmRegular
 		includeFontPadding = false
-		// The Palm OS font has no ▾ glyph, so Android draws it from the system font, which draws it
-		// larger. As in Datebook, this shrinks it to 0.6 of the text size.
-		val i = text.indexOf('▾')
-		if (i >= 0) text = SpannableString(text).apply {
-			setSpan(RelativeSizeSpan(0.6f), i, i + 1, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
+		// The Palm OS font has no ▾ or ✓ glyph, so Android draws them from the system font, which draws
+		// them larger. As in Datebook, this shrinks each one to 0.6 of the text size.
+		if (text.none { it == '▾' || it == '✓' }) return
+		val s = SpannableString(text)
+		text.forEachIndexed { i, ch ->
+			if (ch == '▾' || ch == '✓') s.setSpan(RelativeSizeSpan(0.6f), i, i + 1, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
 		}
+		text = s
 	}
 
 	private fun topBar(): LinearLayout {
@@ -168,71 +169,55 @@ class MainActivity : Activity() {
 	}
 
 	private fun viewMenu(anchor: View) {
-		val label = if (state.viewMode == ViewMode.GRID) "View as List" else "View as Grid"
-		PopupMenu(this, anchor).apply {
-			menu.add(0, 0, 0, label)
-			menu.add(0, 1, 1, "Green LCD").apply {
-				isCheckable = true
-				isChecked = state.green
-			}
-			menu.add(0, 4, 2, "Palm Font").apply {
-				isCheckable = true
-				isChecked = state.palmFont
-			}
-			menu.add(0, 2, 3, "Text Size...")
-			menu.add(0, 3, 4, "Icon Size...")
-			setOnMenuItemClickListener { item ->
-				when (item.itemId) {
-					0 -> {
-						state.viewMode = if (state.viewMode == ViewMode.GRID) ViewMode.LIST else ViewMode.GRID
-						save()
-						render()
-					}
-					1 -> {
-						state.green = !state.green
-						save()
-						render()
-					}
-					2 -> pickSize(this@MainActivity, "Text Size", state.textSize) { s ->
-						state.textSize = s
-						save()
-						// attachBaseContext reads the new size.
-						recreate()
-					}
-					3 -> pickSize(this@MainActivity, "Icon Size", state.iconSize) { s ->
-						state.iconSize = s
-						save()
-						render(keepScroll = true)
-					}
-					4 -> {
-						state.palmFont = !state.palmFont
-						save()
-						render(keepScroll = true)
-					}
+		val items = listOf(
+			if (state.viewMode == ViewMode.GRID) "View as List" else "View as Grid",
+			"Green LCD", "Palm Font", "Text Size...", "Icon Size...",
+		)
+		val checked = setOfNotNull(1.takeIf { state.green }, 2.takeIf { state.palmFont })
+		popupList(anchor, items, checked) { i ->
+			when (i) {
+				0 -> {
+					state.viewMode = if (state.viewMode == ViewMode.GRID) ViewMode.LIST else ViewMode.GRID
+					save()
+					render()
 				}
-				true
+				1 -> {
+					state.green = !state.green
+					save()
+					render()
+				}
+				2 -> {
+					state.palmFont = !state.palmFont
+					save()
+					render(keepScroll = true)
+				}
+				3 -> pickSize(this, "Text Size", state.textSize) { s ->
+					state.textSize = s
+					save()
+					// attachBaseContext reads the new size.
+					recreate()
+				}
+				4 -> pickSize(this, "Icon Size", state.iconSize) { s ->
+					state.iconSize = s
+					save()
+					render(keepScroll = true)
+				}
 			}
-			show()
 		}
 	}
 
 	private fun categoryMenu(anchor: View) {
-		// Item ids are positions in ids; the last item is "Edit Categories...".
+		// Item indexes are positions in ids; the last item is "Edit Categories...".
 		val ids = listOf(ALL) + state.categories.map { it.id }
-		PopupMenu(this, anchor).apply {
-			ids.forEachIndexed { i, id -> menu.add(0, i, i, state.categoryName(id)) }
-			menu.add(0, ids.size, ids.size, "Edit Categories...")
-			setOnMenuItemClickListener { item ->
-				if (item.itemId == ids.size) {
-					editCategories(this@MainActivity, state) { save(); render() }
-				} else {
-					state.selected = ids[item.itemId]
-					save()
-					render()
-				}
-				true
+		val items = ids.map { state.categoryName(it) } + "Edit Categories..."
+		popupList(anchor, items, setOf(ids.indexOf(state.selected))) { i ->
+			if (i == ids.size) {
+				editCategories(this, state) { save(); render() }
+			} else {
+				state.selected = ids[i]
+				save()
+				render()
 			}
-			show()
 		}
 	}
 
@@ -301,28 +286,23 @@ class MainActivity : Activity() {
 
 	private fun appMenu(anchor: View, e: AppEntry) {
 		val labels = listOf("Category...", "Dock 1", "Dock 2", "Dock 3", "Dock 4", "Info", "Delete")
-		PopupMenu(this, anchor).apply {
-			labels.forEachIndexed { i, s -> menu.add(0, i, i, s) }
-			setOnMenuItemClickListener { item ->
-				when (item.itemId) {
-					0 -> pickCategory(this@MainActivity, state, state.categoryOf(e.component)) { id ->
-						state.assign(e.component, id)
-						save()
-						render(keepScroll = true)
-					}
-					1, 2, 3, 4 -> {
-						state.dock[item.itemId - 1] = e.component
-						save()
-						render(keepScroll = true)
-					}
-					5 -> startSafely(Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
-						Uri.fromParts("package", e.packageName, null)))
-					6 -> startSafely(Intent(Intent.ACTION_DELETE,
-						Uri.fromParts("package", e.packageName, null)))
+		popupList(anchor, labels) { i ->
+			when (i) {
+				0 -> pickCategory(this, state, state.categoryOf(e.component)) { id ->
+					state.assign(e.component, id)
+					save()
+					render(keepScroll = true)
 				}
-				true
+				1, 2, 3, 4 -> {
+					state.dock[i - 1] = e.component
+					save()
+					render(keepScroll = true)
+				}
+				5 -> startSafely(Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
+					Uri.fromParts("package", e.packageName, null)))
+				6 -> startSafely(Intent(Intent.ACTION_DELETE,
+					Uri.fromParts("package", e.packageName, null)))
 			}
-			show()
 		}
 	}
 
@@ -357,15 +337,10 @@ class MainActivity : Activity() {
 	}
 
 	private fun dockMenu(anchor: View, i: Int) {
-		PopupMenu(this, anchor).apply {
-			menu.add("Clear")
-			setOnMenuItemClickListener {
-				state.dock[i] = null
-				save()
-				render(keepScroll = true)
-				true
-			}
-			show()
+		popupList(anchor, listOf("Clear")) {
+			state.dock[i] = null
+			save()
+			render(keepScroll = true)
 		}
 	}
 }
