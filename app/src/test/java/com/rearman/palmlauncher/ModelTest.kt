@@ -204,4 +204,13 @@ class ModelTest {
 		assertNull(s.dock[2])
 		assertNull(s.dock[3])
 	}
+
+	@Test
+	fun sizeOfName() {
+		assertEquals(Size.LARGE, Size.of("LARGE"))
+		assertEquals(Size.NORMAL, Size.of(""))
+		assertEquals(Size.NORMAL, Size.of(null))
+		assertEquals(Size.NORMAL, Size.of("HUGE"))
+		assertEquals(Size.NORMAL, LauncherState.defaults().textSize)
+	}
 }

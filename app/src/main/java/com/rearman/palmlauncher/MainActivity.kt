@@ -136,14 +136,31 @@ class MainActivity : Activity() {
 				isCheckable = true
 				isChecked = state.green
 			}
+			menu.add(0, 2, 2, "Text Size...")
+			menu.add(0, 3, 3, "Icon Size...")
 			setOnMenuItemClickListener { item ->
-				if (item.itemId == 0) {
-					state.viewMode = if (state.viewMode == ViewMode.GRID) ViewMode.LIST else ViewMode.GRID
-				} else {
-					state.green = !state.green
+				when (item.itemId) {
+					0 -> {
+						state.viewMode = if (state.viewMode == ViewMode.GRID) ViewMode.LIST else ViewMode.GRID
+						save()
+						render()
+					}
+					1 -> {
+						state.green = !state.green
+						save()
+						render()
+					}
+					2 -> pickSize(this@MainActivity, "Text Size", state.textSize) { s ->
+						state.textSize = s
+						save()
+						render(keepScroll = true)
+					}
+					3 -> pickSize(this@MainActivity, "Icon Size", state.iconSize) { s ->
+						state.iconSize = s
+						save()
+						render(keepScroll = true)
+					}
 				}
-				save()
-				render()
 				true
 			}
 			show()
@@ -192,17 +209,17 @@ class MainActivity : Activity() {
 		cell.gravity = if (grid) Gravity.CENTER_HORIZONTAL else Gravity.CENTER_VERTICAL
 		val left = if (grid) dp(6) else dp(16)
 		cell.setPadding(left, dp(6), dp(6), dp(6))
-		val iconSize = if (grid) dp(48) else dp(32)
+		val iconSize = (dp(if (grid) 48 else 32) * state.iconSize.scale).toInt()
 		val icon = ImageView(this).apply { setImageDrawable(e.icon) }
 		cell.addView(icon, LinearLayout.LayoutParams(iconSize, iconSize))
 		val label = TextView(this).apply {
 			text = e.label
 			if (grid) {
-				textSize = 12f
+				textSize = 12f * state.textSize.scale
 				gravity = Gravity.CENTER_HORIZONTAL
 				maxLines = 2
 			} else {
-				textSize = 15f
+				textSize = 15f * state.textSize.scale
 				setSingleLine(true)
 			}
 			ellipsize = TextUtils.TruncateAt.END
@@ -259,16 +276,18 @@ class MainActivity : Activity() {
 			setPadding(dp(8), dp(8), dp(8), dp(8))
 			setBackgroundColor(dockColor())
 		}
+		val iconSize = (dp(48) * state.iconSize.scale).toInt()
 		for (i in state.dock.indices) {
 			val app = apps.find { it.component == state.dock[i] }
 			val slot = FrameLayout(this)
 			if (app != null) {
 				val icon = ImageView(this).apply { setImageDrawable(app.icon) }
-				slot.addView(icon, FrameLayout.LayoutParams(dp(48), dp(48), Gravity.CENTER))
+				slot.addView(icon, FrameLayout.LayoutParams(iconSize, iconSize, Gravity.CENTER))
 				slot.setOnClickListener { Apps.launch(this, app.component) }
 				slot.setOnLongClickListener { v -> dockMenu(v, i); true }
 			}
-			bar.addView(slot, LinearLayout.LayoutParams(0, dp(64), 1f))
+			// 8 dp above and below the icon, as at Normal size (48 dp icon in a 64 dp slot).
+			bar.addView(slot, LinearLayout.LayoutParams(0, iconSize + dp(16), 1f))
 		}
 		return bar
 	}

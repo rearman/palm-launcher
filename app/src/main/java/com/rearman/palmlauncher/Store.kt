@@ -39,6 +39,8 @@ object Store {
 			.put("selected", s.selected)
 			.put("viewMode", s.viewMode.name)
 			.put("green", s.green)
+			.put("textSize", s.textSize.name)
+			.put("iconSize", s.iconSize.name)
 		ctx.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit().putString(KEY, o.toString()).apply()
 	}
 
@@ -70,13 +72,18 @@ object Store {
 			}
 		}
 
-		// optBoolean: state saved by older builds has no "green" key, and getBoolean would throw.
+		// opt*: state saved by older builds has no "green", "textSize" or "iconSize" key, and get* would throw.
+		// optString gives "" for a missing key, and Size.of("") gives NORMAL.
 		return LauncherState(
 			categories,
 			assignments,
 			dock,
 			o.getInt("selected"),
 			ViewMode.valueOf(o.getString("viewMode")),
-		).apply { green = o.optBoolean("green", false) }
+		).apply {
+			green = o.optBoolean("green", false)
+			textSize = Size.of(o.optString("textSize"))
+			iconSize = Size.of(o.optString("iconSize"))
+		}
 	}
 }

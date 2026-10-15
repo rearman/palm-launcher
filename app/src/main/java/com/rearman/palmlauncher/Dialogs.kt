@@ -19,6 +19,19 @@ fun pickCategory(act: Activity, state: LauncherState, current: Int, onPick: (Int
 		.show()
 }
 
+// Single-choice list of the Size steps; `current` is checked. Calls onPick(size).
+fun pickSize(act: Activity, title: String, current: Size, onPick: (Size) -> Unit) {
+	val sizes = Size.values()
+	AlertDialog.Builder(act)
+		.setTitle(title)
+		.setSingleChoiceItems(sizes.map { it.label }.toTypedArray<CharSequence>(), sizes.indexOf(current)) { dialog, which ->
+			onPick(sizes[which])
+			dialog.dismiss()
+		}
+		.setNegativeButton("Cancel", null)
+		.show()
+}
+
 // Palm "Edit Categories". Calls onChange() after each change (caller saves and redraws).
 fun editCategories(act: Activity, state: LauncherState, onChange: () -> Unit) {
 	val editable = state.categories.filter { it.id != UNFILED }

@@ -5,6 +5,16 @@ const val ALL = -1      // filter value: show all apps
 
 enum class ViewMode { GRID, LIST }
 
+// Text and icon size steps. scale multiplies the Normal size.
+enum class Size(val label: String, val scale: Float) {
+	SMALL("Small", 0.8f), NORMAL("Normal", 1f), LARGE("Large", 1.25f);
+
+	companion object {
+		// An unknown or missing name (state saved by older builds) gives NORMAL.
+		fun of(name: String?): Size = values().firstOrNull { it.name == name } ?: NORMAL
+	}
+}
+
 data class Category(val id: Int, val name: String)
 
 class LauncherState(
@@ -15,6 +25,8 @@ class LauncherState(
 	var viewMode: ViewMode,
 ) {
 	var green = false  // Green LCD screen colors (saved by Store).
+	var textSize = Size.NORMAL  // App label size (saved by Store).
+	var iconSize = Size.NORMAL  // App and dock icon size (saved by Store).
 
 	init {
 		sortCategories()
