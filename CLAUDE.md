@@ -13,7 +13,7 @@ The repository has no Gradle wrapper. CI (`.github/workflows/build-apk.yml`) use
 ```sh
 gradle assembleDebug --stacktrace
 gradle testDebugUnitTest
-gradle testDebugUnitTest --tests com.rearman.palmlauncher.SomeTest
+gradle testDebugUnitTest --tests com.rearman.palmlauncher.ModelTest
 ```
 
 Output: `app/build/outputs/apk/debug/app-debug.apk`. CI runs on each push to `main` or `master`, on each push of a `v*` tag, and on manual dispatch. It renames the APK to `palm-launcher.apk` (`palm-launcher-<tag>.apk` on a tag build) and uploads it unzipped (`archive: false`, which accepts only one file). A tag build also attaches the APK to the GitHub Release of that tag, and creates the release when it does not exist.
