@@ -25,6 +25,7 @@ class MainActivity : Activity() {
 	var apps: List<AppEntry> = emptyList()
 	var receiver: BroadcastReceiver? = null
 	var hasFocus = false
+	private var scroll: ScrollView? = null
 
 	private val match = ViewGroup.LayoutParams.MATCH_PARENT
 	private val wrap = ViewGroup.LayoutParams.WRAP_CONTENT
@@ -35,7 +36,7 @@ class MainActivity : Activity() {
 		super.onCreate(savedInstanceState)
 		state = Store.load(this)
 		reload()
-		receiver = Apps.watch(this) { reload(); render() }
+		receiver = Apps.watch(this) { reload(); render(keepScroll = true) }
 		render()
 	}
 
@@ -76,17 +77,23 @@ class MainActivity : Activity() {
 
 	fun save() = Store.save(this, state)
 
-	fun render() {
+	// keepScroll: stay at the same place in the app list (an edit of one app); else go to the top.
+	fun render(keepScroll: Boolean = false) {
+		val y = if (keepScroll) scroll?.scrollY ?: 0 else 0
 		val root = LinearLayout(this).apply {
 			orientation = LinearLayout.VERTICAL
 			setBackgroundColor(Color.WHITE)
 		}
+		val area = appArea()
+		scroll = area
 		root.addView(topBar(), lp(match, wrap))
 		root.addView(rule(), lp(match, dp(1)))
-		root.addView(appArea(), lp(match, 0, 1f))
+		root.addView(area, lp(match, 0, 1f))
 		root.addView(rule(), lp(match, dp(1)))
 		root.addView(dock(), lp(match, wrap))
 		setContentView(root)
+		// The new list has no height until layout, so scroll after it.
+		if (y > 0) area.post { area.scrollTo(0, y) }
 	}
 
 	private fun lp(w: Int, h: Int, weight: Float = 0f) = LinearLayout.LayoutParams(w, h, weight)
@@ -206,12 +213,12 @@ class MainActivity : Activity() {
 					0 -> pickCategory(this@MainActivity, state, state.categoryOf(e.component)) { id ->
 						state.assign(e.component, id)
 						save()
-						render()
+						render(keepScroll = true)
 					}
 					1, 2, 3, 4 -> {
 						state.dock[item.itemId - 1] = e.component
 						save()
-						render()
+						render(keepScroll = true)
 					}
 					5 -> startSafely(Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
 						Uri.fromParts("package", e.packageName, null)))
@@ -258,7 +265,7 @@ class MainActivity : Activity() {
 			setOnMenuItemClickListener {
 				state.dock[i] = null
 				save()
-				render()
+				render(keepScroll = true)
 				true
 			}
 			show()
