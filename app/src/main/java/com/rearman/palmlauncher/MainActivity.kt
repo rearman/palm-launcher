@@ -110,7 +110,8 @@ class MainActivity : Activity() {
 			gravity = Gravity.CENTER_VERTICAL
 			setPadding(dp(8), dp(8), dp(8), dp(8))
 			addView(menu, lp(wrap, wrap))
-			addView(View(this@MainActivity), lp(0, wrap, 1f))
+			// A plain View with WRAP_CONTENT takes all the height it is offered, so the spacer gets 0.
+			addView(View(this@MainActivity), lp(0, 0, 1f))
 			addView(category, lp(wrap, wrap))
 		}
 	}
@@ -158,7 +159,7 @@ class MainActivity : Activity() {
 			val row = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL }
 			chunk.forEach { row.addView(cell(it), lp(0, wrap, 1f)) }
 			// Pad a short last row so its cells keep the same width.
-			repeat(cols - chunk.size) { row.addView(View(this), lp(0, wrap, 1f)) }
+			repeat(cols - chunk.size) { row.addView(View(this), lp(0, 0, 1f)) }
 			list.addView(row, lp(match, wrap))
 		}
 		return ScrollView(this).apply { addView(list) }
