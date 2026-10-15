@@ -1,5 +1,6 @@
 package com.rearman.palmlauncher
 
+import org.junit.Assert.assertArrayEquals
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertFalse
@@ -212,5 +213,13 @@ class ModelTest {
 		assertEquals(Size.NORMAL, Size.of(null))
 		assertEquals(Size.NORMAL, Size.of("HUGE"))
 		assertEquals(Size.NORMAL, LauncherState.defaults().textSize)
+	}
+
+	@Test
+	fun columnWidthsFitOrNull() {
+		// Column 0 holds entries 0, 2, 4; column 1 holds entries 1, 3.
+		assertArrayEquals(intArrayOf(30, 40), columnWidths(listOf(10, 40, 30, 20, 5), 2, 100))
+		assertArrayEquals(intArrayOf(0, 0), columnWidths(emptyList(), 2, 100))
+		assertNull(columnWidths(listOf(60, 50), 2, 100))
 	}
 }

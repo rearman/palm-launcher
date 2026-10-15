@@ -15,6 +15,14 @@ enum class Size(val label: String, val scale: Float) {
 	}
 }
 
+// List view column widths: each column is as wide as its widest entry (entries fill across, then down).
+// Null when the columns together are wider than `max`; the caller then uses equal columns.
+fun columnWidths(entryWidths: List<Int>, cols: Int, max: Int): IntArray? {
+	val w = IntArray(cols)
+	entryWidths.forEachIndexed { i, x -> w[i % cols] = maxOf(w[i % cols], x) }
+	return if (w.sum() <= max) w else null
+}
+
 data class Category(val id: Int, val name: String)
 
 class LauncherState(

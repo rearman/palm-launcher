@@ -202,14 +202,29 @@ class MainActivity : Activity() {
 	private fun appArea(): ScrollView {
 		val grid = state.viewMode == ViewMode.GRID
 		val cols = if (grid) 4 else 2
-		val visible = state.filter(apps, { it.component }, { it.label })
-		val list = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
-		visible.chunked(cols).forEach { chunk ->
+		val cells = state.filter(apps, { it.component }, { it.label }).map { cell(it) }
+		// List view: the two columns together are centered on the screen (null widths: equal columns).
+		// Limit: it measures against the full screen width, so in split-screen mode the columns can be cut off.
+		val widths = if (grid) null else {
+			val spec = View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED)
+			columnWidths(cells.map { it.measure(spec, spec); it.measuredWidth }, cols, resources.displayMetrics.widthPixels)
+		}
+		val list = LinearLayout(this).apply {
+			orientation = LinearLayout.VERTICAL
+			gravity = Gravity.CENTER_HORIZONTAL
+		}
+		cells.chunked(cols).forEach { chunk ->
 			val row = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL }
-			chunk.forEach { row.addView(cell(it), lp(0, wrap, 1f)) }
-			// Pad a short last row so its cells keep the same width.
-			repeat(cols - chunk.size) { row.addView(View(this), lp(0, 0, 1f)) }
-			list.addView(row, lp(match, wrap))
+			if (widths != null) {
+				chunk.forEachIndexed { c, v -> row.addView(v, lp(widths[c], wrap)) }
+				// The fixed row width keeps a short last row at the left of the block.
+				list.addView(row, lp(widths.sum(), wrap))
+			} else {
+				chunk.forEach { row.addView(it, lp(0, wrap, 1f)) }
+				// Pad a short last row so its cells keep the same width.
+				repeat(cols - chunk.size) { row.addView(View(this), lp(0, 0, 1f)) }
+				list.addView(row, lp(match, wrap))
+			}
 		}
 		return ScrollView(this).apply { addView(list) }
 	}
@@ -219,8 +234,8 @@ class MainActivity : Activity() {
 		val cell = LinearLayout(this)
 		cell.orientation = if (grid) LinearLayout.VERTICAL else LinearLayout.HORIZONTAL
 		cell.gravity = if (grid) Gravity.CENTER_HORIZONTAL else Gravity.CENTER_VERTICAL
-		val left = if (grid) dp(6) else dp(16)
-		cell.setPadding(left, dp(6), dp(6), dp(6))
+		val side = if (grid) dp(6) else dp(8)
+		cell.setPadding(side, dp(6), side, dp(6))
 		val iconSize = (dp(if (grid) 48 else 32) * state.iconSize.scale).toInt()
 		val icon = ImageView(this).apply { setImageDrawable(e.icon) }
 		cell.addView(icon, LinearLayout.LayoutParams(iconSize, iconSize))

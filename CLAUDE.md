@@ -30,4 +30,4 @@ The function of the Palm III Applications screen: one A to Z list of all apps, f
 - **`Store.kt`** saves `LauncherState` as one JSON string in SharedPreferences `launcher`. Bad or missing data gives `LauncherState.defaults()`.
 - **`Apps.kt`** loads the `MAIN`/`LAUNCHER` activities and launches them. The `<queries>` element in the manifest is required for that query on Android 11 and later. `REQUEST_DELETE_PACKAGES` is required for the Delete (uninstall) menu item.
 - **`Dialogs.kt`** has the category picker and Edit Categories dialogs (platform `AlertDialog`).
-- Grid view has 4 columns, list view has 2. Both fill across, then down.
+- Grid view has 4 columns, list view has 2. Both fill across, then down. In list view each column is as wide as its widest entry, and the two columns together are centered (`columnWidths`).
