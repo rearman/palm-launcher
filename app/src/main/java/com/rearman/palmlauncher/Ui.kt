@@ -18,7 +18,7 @@ import android.widget.PopupWindow
 import android.widget.ScrollView
 import android.widget.TextView
 
-// Palm-style pop-up lists and dialogs in the launcher colors (Green LCD) and font (Palm Font, Text Size).
+// Palm-style pop-up lists and dialogs in the launcher colors (Green LCD) and font (Palm OS, Text Size).
 
 private const val MATCH = ViewGroup.LayoutParams.MATCH_PARENT
 private const val WRAP = ViewGroup.LayoutParams.WRAP_CONTENT
@@ -34,7 +34,7 @@ internal fun MainActivity.box(fill: Int, radiusDp: Int): GradientDrawable = Grad
 internal fun MainActivity.text(s: CharSequence, bold: Boolean = false): TextView = TextView(this).apply {
 	text = s
 	setTextColor(Color.BLACK)
-	font(16f, bold)
+	font(bold)
 }
 
 // A Palm pop-up list at `anchor`. Items in `checked` get a check mark. A tap closes the list, then
@@ -128,7 +128,7 @@ class PalmDialog(private val act: MainActivity, title: String) : Dialog(act) {
 			setText(s)
 			setTextColor(Color.BLACK)
 			setSingleLine(true)
-			with(act) { font(16f, bold = false) }
+			with(act) { font(bold = false) }
 			setSelection(text.length)
 		}
 		body.addView(ed, LinearLayout.LayoutParams(MATCH, WRAP).apply { setMargins(act.dp(8), act.dp(8), act.dp(8), 0) })

@@ -5,8 +5,8 @@ const val ALL = -1      // filter value: show all apps
 
 enum class ViewMode { GRID, LIST }
 
-// Text and icon size steps. scale multiplies the Normal size. palmPx is the Palm Font text size in
-// Palm px, the same as the Datebook Font sizes.
+// Text and icon size steps. scale multiplies the Normal icon size. palmPx is the text size in Palm px,
+// the same as the Datebook Font sizes.
 enum class Size(val label: String, val scale: Float, val palmPx: Float) {
 	SMALL("Small", 0.8f, 13f), NORMAL("Normal", 1f, 16f), LARGE("Large", 1.25f, 20f);
 
@@ -34,9 +34,8 @@ class LauncherState(
 	var viewMode: ViewMode,
 ) {
 	var green = false  // Green LCD screen colors (saved by Store).
-	var textSize = Size.NORMAL  // App label size (saved by Store).
+	var textSize = Size.NORMAL  // Size of all launcher text (saved by Store).
 	var iconSize = Size.NORMAL  // App and dock icon size (saved by Store).
-	var palmFont = false  // Palm OS font, as in Datebook (saved by Store).
 
 	init {
 		sortCategories()

@@ -3,9 +3,7 @@ package com.rearman.palmlauncher
 import android.app.Activity
 import android.content.ActivityNotFoundException
 import android.content.BroadcastReceiver
-import android.content.Context
 import android.content.Intent
-import android.content.res.Configuration
 import android.graphics.Color
 import android.graphics.Typeface
 import android.net.Uri
@@ -44,15 +42,6 @@ class MainActivity : Activity() {
 	// The green is the Green LCD paper color of the Datebook app.
 	internal fun paper() = if (state.green) 0xFFC9D3A8.toInt() else Color.WHITE
 	private fun dockColor() = if (state.green) 0xFFB5BF94.toInt() else 0xFFEEEEEE.toInt()
-
-	// Text Size multiplies the system font scale, so every sp size in the launcher follows it.
-	// A change of Text Size recreates the activity.
-	override fun attachBaseContext(base: Context) {
-		super.attachBaseContext(base)
-		applyOverrideConfiguration(Configuration().apply {
-			fontScale = base.resources.configuration.fontScale * Store.load(base).textSize.scale
-		})
-	}
 
 	override fun onCreate(savedInstanceState: Bundle?) {
 		super.onCreate(savedInstanceState)
@@ -123,15 +112,10 @@ class MainActivity : Activity() {
 
 	private fun rule() = View(this).apply { setBackgroundColor(Color.BLACK) }
 
-	// Sets the size and face of launcher text; call it after the text is set. The system font is `sp`
-	// in size. Palm Font uses the Datebook sizes for all text: Text Size gives 13, 16 or 20 Palm px,
-	// where the shorter screen side is 160 Palm px (Palm IIIxe).
-	internal fun TextView.font(sp: Float, bold: Boolean) {
-		if (!state.palmFont) {
-			textSize = sp
-			typeface = if (bold) Typeface.DEFAULT_BOLD else Typeface.DEFAULT
-			return
-		}
+	// Sets the Palm OS font and size of launcher text; call it after the text is set. All text uses the
+	// Datebook sizes: Text Size gives 13, 16 or 20 Palm px, where the shorter screen side is 160 Palm px
+	// (Palm IIIxe).
+	internal fun TextView.font(bold: Boolean) {
 		val dm = resources.displayMetrics
 		setTextSize(TypedValue.COMPLEX_UNIT_PX, state.textSize.palmPx * minOf(dm.widthPixels, dm.heightPixels) / 160f)
 		typeface = if (bold) palmBold else palmRegular
@@ -149,12 +133,12 @@ class MainActivity : Activity() {
 	private fun topBar(): LinearLayout {
 		val menu = TextView(this).apply {
 			text = "Menu"
-			font(16f, bold = true)
+			font(bold = true)
 			setOnClickListener { viewMenu(it) }
 		}
 		val category = TextView(this).apply {
 			text = "▾ " + state.categoryName(state.selected)
-			font(16f, bold = false)
+			font(bold = false)
 			setOnClickListener { categoryMenu(it) }
 		}
 		return LinearLayout(this).apply {
@@ -171,9 +155,9 @@ class MainActivity : Activity() {
 	private fun viewMenu(anchor: View) {
 		val items = listOf(
 			if (state.viewMode == ViewMode.GRID) "View as List" else "View as Grid",
-			"Green LCD", "Palm Font", "Text Size...", "Icon Size...",
+			"Green LCD", "Text Size...", "Icon Size...",
 		)
-		val checked = setOfNotNull(1.takeIf { state.green }, 2.takeIf { state.palmFont })
+		val checked = setOfNotNull(1.takeIf { state.green })
 		popupList(anchor, items, checked) { i ->
 			when (i) {
 				0 -> {
@@ -186,18 +170,12 @@ class MainActivity : Activity() {
 					save()
 					render()
 				}
-				2 -> {
-					state.palmFont = !state.palmFont
+				2 -> pickSize(this, "Text Size", state.textSize) { s ->
+					state.textSize = s
 					save()
 					render(keepScroll = true)
 				}
-				3 -> pickSize(this, "Text Size", state.textSize) { s ->
-					state.textSize = s
-					save()
-					// attachBaseContext reads the new size.
-					recreate()
-				}
-				4 -> pickSize(this, "Icon Size", state.iconSize) { s ->
+				3 -> pickSize(this, "Icon Size", state.iconSize) { s ->
 					state.iconSize = s
 					save()
 					render(keepScroll = true)
@@ -263,12 +241,11 @@ class MainActivity : Activity() {
 		cell.addView(icon, LinearLayout.LayoutParams(iconSize, iconSize))
 		val label = TextView(this).apply {
 			text = e.label
+			font(bold = false)
 			if (grid) {
-				font(12f, bold = false)
 				gravity = Gravity.CENTER_HORIZONTAL
 				maxLines = 2
 			} else {
-				font(15f, bold = false)
 				setSingleLine(true)
 			}
 			ellipsize = TextUtils.TruncateAt.END
