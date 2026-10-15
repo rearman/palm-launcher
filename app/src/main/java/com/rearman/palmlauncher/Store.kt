@@ -38,6 +38,7 @@ object Store {
 			.put("dock", dock)
 			.put("selected", s.selected)
 			.put("viewMode", s.viewMode.name)
+			.put("green", s.green)
 		ctx.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit().putString(KEY, o.toString()).apply()
 	}
 
@@ -69,12 +70,13 @@ object Store {
 			}
 		}
 
+		// optBoolean: state saved by older builds has no "green" key, and getBoolean would throw.
 		return LauncherState(
 			categories,
 			assignments,
 			dock,
 			o.getInt("selected"),
 			ViewMode.valueOf(o.getString("viewMode")),
-		)
+		).apply { green = o.optBoolean("green", false) }
 	}
 }

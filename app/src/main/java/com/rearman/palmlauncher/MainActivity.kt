@@ -32,6 +32,10 @@ class MainActivity : Activity() {
 
 	fun dp(v: Int) = (v * resources.displayMetrics.density).toInt()
 
+	// The green is the Green LCD paper color of the Datebook app.
+	private fun paper() = if (state.green) 0xFFC9D3A8.toInt() else Color.WHITE
+	private fun dockColor() = if (state.green) 0xFFB5BF94.toInt() else 0xFFEEEEEE.toInt()
+
 	override fun onCreate(savedInstanceState: Bundle?) {
 		super.onCreate(savedInstanceState)
 		state = Store.load(this)
@@ -82,7 +86,7 @@ class MainActivity : Activity() {
 		val y = if (keepScroll) scroll?.scrollY ?: 0 else 0
 		val root = LinearLayout(this).apply {
 			orientation = LinearLayout.VERTICAL
-			setBackgroundColor(Color.WHITE)
+			setBackgroundColor(paper())
 		}
 		val area = appArea()
 		scroll = area
@@ -92,6 +96,7 @@ class MainActivity : Activity() {
 		root.addView(rule(), lp(match, dp(1)))
 		root.addView(dock(), lp(match, wrap))
 		setContentView(root)
+		window.decorView.setBackgroundColor(paper())
 		// The new list has no height until layout, so scroll after it.
 		if (y > 0) area.post { area.scrollTo(0, y) }
 	}
@@ -126,9 +131,17 @@ class MainActivity : Activity() {
 	private fun viewMenu(anchor: View) {
 		val label = if (state.viewMode == ViewMode.GRID) "View as List" else "View as Grid"
 		PopupMenu(this, anchor).apply {
-			menu.add(label)
-			setOnMenuItemClickListener {
-				state.viewMode = if (state.viewMode == ViewMode.GRID) ViewMode.LIST else ViewMode.GRID
+			menu.add(0, 0, 0, label)
+			menu.add(0, 1, 1, "Green LCD").apply {
+				isCheckable = true
+				isChecked = state.green
+			}
+			setOnMenuItemClickListener { item ->
+				if (item.itemId == 0) {
+					state.viewMode = if (state.viewMode == ViewMode.GRID) ViewMode.LIST else ViewMode.GRID
+				} else {
+					state.green = !state.green
+				}
 				save()
 				render()
 				true
@@ -243,7 +256,7 @@ class MainActivity : Activity() {
 		val bar = LinearLayout(this).apply {
 			orientation = LinearLayout.HORIZONTAL
 			setPadding(dp(8), dp(8), dp(8), dp(8))
-			setBackgroundColor(0xFFEEEEEE.toInt())
+			setBackgroundColor(dockColor())
 		}
 		for (i in state.dock.indices) {
 			val app = apps.find { it.component == state.dock[i] }

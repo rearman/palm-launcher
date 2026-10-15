@@ -14,6 +14,8 @@ class LauncherState(
 	var selected: Int,                         // ALL or a category id
 	var viewMode: ViewMode,
 ) {
+	var green = false  // Green LCD screen colors (saved by Store).
+
 	companion object {
 		// Games(1), Main(2), System(3), Utilities(4), Unfiled(0); empty assignments; dock of 4 nulls; ALL; GRID
 		fun defaults(): LauncherState = LauncherState(
