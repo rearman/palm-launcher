@@ -1,5 +1,7 @@
 package com.rearman.palmlauncher
 
+import kotlin.math.roundToInt
+
 const val UNFILED = 0   // fixed category id, cannot be renamed or deleted, always last in categories
 const val ALL = -1      // filter value: show all apps
 
@@ -23,6 +25,10 @@ fun columnWidths(entryWidths: List<Int>, cols: Int, max: Int): IntArray? {
 	return if (w.sum() <= max) w else null
 }
 
+// Palm Font text size in screen px: a whole number of px per font pixel (the Palm OS font has 16
+// font pixels per em), so every glyph pixel is the same size. Never below 16 px.
+fun palmFontPx(px: Float): Float = maxOf(1, (px / 16).roundToInt()) * 16f
+
 data class Category(val id: Int, val name: String)
 
 class LauncherState(
@@ -35,6 +41,7 @@ class LauncherState(
 	var green = false  // Green LCD screen colors (saved by Store).
 	var textSize = Size.NORMAL  // App label size (saved by Store).
 	var iconSize = Size.NORMAL  // App and dock icon size (saved by Store).
+	var palmFont = false  // Palm OS font, as in Datebook (saved by Store).
 
 	init {
 		sortCategories()

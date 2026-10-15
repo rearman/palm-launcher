@@ -11,7 +11,11 @@ import android.graphics.Typeface
 import android.net.Uri
 import android.os.Bundle
 import android.provider.Settings
+import android.text.SpannableString
+import android.text.Spanned
 import android.text.TextUtils
+import android.text.style.RelativeSizeSpan
+import android.util.TypedValue
 import android.view.Gravity
 import android.view.View
 import android.view.ViewGroup
@@ -28,6 +32,13 @@ class MainActivity : Activity() {
 	var receiver: BroadcastReceiver? = null
 	var hasFocus = false
 	private var scroll: ScrollView? = null
+
+	// Damien Guard's Palm OS font, the same files as in Datebook (assets/fonts).
+	private val palmRegular by lazy { Typeface.createFromAsset(assets, "fonts/palm-os.ttf") }
+	private val palmBold by lazy { Typeface.createFromAsset(assets, "fonts/palm-os-bold.ttf") }
+	// Palm capitals are 0.44 em tall, Roboto capitals 0.71 em, so Palm Font text is this much larger
+	// to look the same size. Tune by eye on the device.
+	private val palmFontScale = 1.6f
 
 	private val match = ViewGroup.LayoutParams.MATCH_PARENT
 	private val wrap = ViewGroup.LayoutParams.WRAP_CONTENT
@@ -116,16 +127,36 @@ class MainActivity : Activity() {
 
 	private fun rule() = View(this).apply { setBackgroundColor(Color.BLACK) }
 
+	// Sets the text size in sp and the face. With Palm Font the size grows by palmFontScale and snaps
+	// with palmFontPx. Limit: near a step boundary, two Text Size steps can give the same snapped size.
+	// Call it after the text is set.
+	private fun TextView.font(sp: Float, bold: Boolean) {
+		if (!state.palmFont) {
+			textSize = sp
+			typeface = if (bold) Typeface.DEFAULT_BOLD else Typeface.DEFAULT
+			return
+		}
+		val px = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_SP, sp * palmFontScale, resources.displayMetrics)
+		setTextSize(TypedValue.COMPLEX_UNIT_PX, palmFontPx(px))
+		typeface = if (bold) palmBold else palmRegular
+		includeFontPadding = false
+		// The Palm OS font has no ▾ glyph, so Android draws it from the system font at the larger
+		// Palm size. This shrinks it back to its system-font size.
+		val i = text.indexOf('▾')
+		if (i >= 0) text = SpannableString(text).apply {
+			setSpan(RelativeSizeSpan(1 / palmFontScale), i, i + 1, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
+		}
+	}
+
 	private fun topBar(): LinearLayout {
 		val menu = TextView(this).apply {
 			text = "Menu"
-			textSize = 16f
-			typeface = Typeface.DEFAULT_BOLD
+			font(16f, bold = true)
 			setOnClickListener { viewMenu(it) }
 		}
 		val category = TextView(this).apply {
 			text = "▾ " + state.categoryName(state.selected)
-			textSize = 16f
+			font(16f, bold = false)
 			setOnClickListener { categoryMenu(it) }
 		}
 		return LinearLayout(this).apply {
@@ -147,8 +178,12 @@ class MainActivity : Activity() {
 				isCheckable = true
 				isChecked = state.green
 			}
-			menu.add(0, 2, 2, "Text Size...")
-			menu.add(0, 3, 3, "Icon Size...")
+			menu.add(0, 4, 2, "Palm Font").apply {
+				isCheckable = true
+				isChecked = state.palmFont
+			}
+			menu.add(0, 2, 3, "Text Size...")
+			menu.add(0, 3, 4, "Icon Size...")
 			setOnMenuItemClickListener { item ->
 				when (item.itemId) {
 					0 -> {
@@ -169,6 +204,11 @@ class MainActivity : Activity() {
 					}
 					3 -> pickSize(this@MainActivity, "Icon Size", state.iconSize) { s ->
 						state.iconSize = s
+						save()
+						render(keepScroll = true)
+					}
+					4 -> {
+						state.palmFont = !state.palmFont
 						save()
 						render(keepScroll = true)
 					}
@@ -242,11 +282,11 @@ class MainActivity : Activity() {
 		val label = TextView(this).apply {
 			text = e.label
 			if (grid) {
-				textSize = 12f
+				font(12f, bold = false)
 				gravity = Gravity.CENTER_HORIZONTAL
 				maxLines = 2
 			} else {
-				textSize = 15f
+				font(15f, bold = false)
 				setSingleLine(true)
 			}
 			ellipsize = TextUtils.TruncateAt.END
