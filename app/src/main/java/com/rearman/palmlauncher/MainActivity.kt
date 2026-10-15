@@ -108,7 +108,7 @@ class MainActivity : Activity() {
 			setOnClickListener { viewMenu(it) }
 		}
 		val category = TextView(this).apply {
-			text = state.categoryName(state.selected) + " ▾"
+			text = "▾ " + state.categoryName(state.selected)
 			textSize = 16f
 			setOnClickListener { categoryMenu(it) }
 		}
