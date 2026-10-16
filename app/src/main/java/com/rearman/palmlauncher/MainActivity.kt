@@ -176,7 +176,8 @@ class MainActivity : Activity() {
 	// gauge, and the category trigger at the right.
 	private fun topBar(): LinearLayout {
 		val clock = TextClock(this).apply {
-			format12Hour = "h:mm a"
+			// As on the Palm IIIxe: the time with no am or pm.
+			format12Hour = "h:mm"
 			format24Hour = "H:mm"
 			font(bold = true)
 			setTextColor(paper())
