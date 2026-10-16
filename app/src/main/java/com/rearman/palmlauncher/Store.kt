@@ -41,6 +41,7 @@ object Store {
 			.put("green", s.green)
 			.put("textSize", s.textSize.name)
 			.put("iconSize", s.iconSize.name)
+			.put("wallpaper", s.wallpaper)
 		ctx.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit().putString(KEY, o.toString()).apply()
 	}
 
@@ -72,7 +73,7 @@ object Store {
 			}
 		}
 
-		// opt*: state saved by older builds has no "green", "textSize" or "iconSize" key, and get* would throw.
+		// opt*: state saved by older builds has no "green", "textSize", "iconSize" or "wallpaper" key, and get* would throw.
 		// optString gives "" for a missing key, and Size.of("") gives NORMAL.
 		// A "palmFont" key from older builds is ignored: the Palm OS font is always on.
 		return LauncherState(
@@ -85,6 +86,7 @@ object Store {
 			green = o.optBoolean("green", false)
 			textSize = Size.of(o.optString("textSize"))
 			iconSize = Size.of(o.optString("iconSize"))
+			wallpaper = o.optBoolean("wallpaper", false)
 		}
 	}
 }

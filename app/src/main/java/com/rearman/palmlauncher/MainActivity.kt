@@ -17,6 +17,7 @@ import android.util.TypedValue
 import android.view.Gravity
 import android.view.View
 import android.view.ViewGroup
+import android.view.WindowManager
 import android.widget.FrameLayout
 import android.widget.ImageView
 import android.widget.LinearLayout
@@ -91,9 +92,13 @@ class MainActivity : Activity() {
 	// keepScroll: stay at the same place in the app list (an edit of one app); else go to the top.
 	fun render(keepScroll: Boolean = false) {
 		val y = if (keepScroll) scroll?.scrollY ?: 0 else 0
+		// Wallpaper: the system wallpaper shows behind the app list; the top bar and dock keep their colors.
+		val back = if (state.wallpaper) Color.TRANSPARENT else paper()
+		if (state.wallpaper) window.addFlags(WindowManager.LayoutParams.FLAG_SHOW_WALLPAPER)
+		else window.clearFlags(WindowManager.LayoutParams.FLAG_SHOW_WALLPAPER)
 		val root = LinearLayout(this).apply {
 			orientation = LinearLayout.VERTICAL
-			setBackgroundColor(paper())
+			setBackgroundColor(back)
 		}
 		val area = appArea()
 		scroll = area
@@ -103,7 +108,7 @@ class MainActivity : Activity() {
 		root.addView(rule(), lp(match, dp(1)))
 		root.addView(dock(), lp(match, wrap))
 		setContentView(root)
-		window.decorView.setBackgroundColor(paper())
+		window.decorView.setBackgroundColor(back)
 		// The new list has no height until layout, so scroll after it.
 		if (y > 0) area.post { area.scrollTo(0, y) }
 	}
@@ -145,6 +150,7 @@ class MainActivity : Activity() {
 			orientation = LinearLayout.HORIZONTAL
 			gravity = Gravity.CENTER_VERTICAL
 			setPadding(dp(8), dp(8), dp(8), dp(8))
+			setBackgroundColor(paper())
 			addView(menu, lp(wrap, wrap))
 			// A plain View with WRAP_CONTENT takes all the height it is offered, so the spacer gets 0.
 			addView(View(this@MainActivity), lp(0, 0, 1f))
@@ -155,9 +161,9 @@ class MainActivity : Activity() {
 	private fun viewMenu(anchor: View) {
 		val items = listOf(
 			if (state.viewMode == ViewMode.GRID) "View as List" else "View as Grid",
-			"Green LCD", "Text Size...", "Icon Size...",
+			"Green LCD", "Wallpaper", "Text Size...", "Icon Size...", "Change Wallpaper...",
 		)
-		val checked = setOfNotNull(1.takeIf { state.green })
+		val checked = setOfNotNull(1.takeIf { state.green }, 2.takeIf { state.wallpaper })
 		popupList(anchor, items, checked) { i ->
 			when (i) {
 				0 -> {
@@ -170,15 +176,28 @@ class MainActivity : Activity() {
 					save()
 					render()
 				}
-				2 -> pickSize(this, "Text Size", state.textSize) { s ->
+				2 -> {
+					state.wallpaper = !state.wallpaper
+					save()
+					render(keepScroll = true)
+				}
+				3 -> pickSize(this, "Text Size", state.textSize) { s ->
 					state.textSize = s
 					save()
 					render(keepScroll = true)
 				}
-				3 -> pickSize(this, "Icon Size", state.iconSize) { s ->
+				4 -> pickSize(this, "Icon Size", state.iconSize) { s ->
 					state.iconSize = s
 					save()
 					render(keepScroll = true)
+				}
+				// The system wallpaper picker sets the home screen and lock screen wallpapers.
+				// The launcher turns Wallpaper on, so the new home screen wallpaper shows.
+				5 -> {
+					state.wallpaper = true
+					save()
+					render(keepScroll = true)
+					startSafely(Intent(Intent.ACTION_SET_WALLPAPER))
 				}
 			}
 		}
@@ -249,6 +268,8 @@ class MainActivity : Activity() {
 				setSingleLine(true)
 			}
 			ellipsize = TextUtils.TruncateAt.END
+			// A paper-colored glow keeps black text legible on any wallpaper.
+			if (state.wallpaper) setShadowLayer(dp(3).toFloat(), 0f, 0f, paper())
 		}
 		val labelParams = if (grid) {
 			LinearLayout.LayoutParams(match, wrap)
