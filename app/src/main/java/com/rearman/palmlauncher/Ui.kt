@@ -55,10 +55,10 @@ internal fun MainActivity.popupList(anchor: View, items: List<String>, checked: 
 	}
 	pw.setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
 	pw.elevation = dp(4).toFloat()
-	// As in Datebook: at most 2/3 of the visible height, at the anchor, moved left or up only as far
-	// as needed to stay on the screen.
+	// As in Datebook: the full visible height, at the anchor, moved left or up only as far as needed
+	// to stay on the screen. A longer list scrolls.
 	val vis = Rect().also { anchor.getWindowVisibleDisplayFrame(it) }
-	val maxH = vis.height() * 2 / 3
+	val maxH = vis.height()
 	sv.measure(View.MeasureSpec.UNSPECIFIED, View.MeasureSpec.UNSPECIFIED)
 	if (sv.measuredHeight > maxH) pw.height = maxH
 	val h = minOf(sv.measuredHeight, maxH)
