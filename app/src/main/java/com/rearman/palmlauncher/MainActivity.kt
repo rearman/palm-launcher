@@ -3,11 +3,14 @@ package com.rearman.palmlauncher
 import android.app.Activity
 import android.content.ActivityNotFoundException
 import android.content.BroadcastReceiver
+import android.content.Context
 import android.content.Intent
+import android.content.IntentFilter
 import android.graphics.Color
 import android.graphics.Typeface
 import android.graphics.drawable.GradientDrawable
 import android.net.Uri
+import android.os.BatteryManager
 import android.os.Bundle
 import android.provider.Settings
 import android.text.SpannableString
@@ -32,6 +35,13 @@ class MainActivity : Activity() {
 	var receiver: BroadcastReceiver? = null
 	var hasFocus = false
 	private var scroll: ScrollView? = null
+	// The battery gauge in the header and its last reading (ACTION_BATTERY_CHANGED, while resumed).
+	private var battery: BatteryGauge? = null
+	private var batteryLevel = 100
+	private var batteryCharging = false
+	private val batteryReceiver = object : BroadcastReceiver() {
+		override fun onReceive(c: Context, i: Intent) = readBattery(i)
+	}
 
 	// Damien Guard's Palm OS font, the same files as in Datebook (assets/fonts).
 	private val palmRegular by lazy { Typeface.createFromAsset(assets, "fonts/palm-os.ttf") }
@@ -58,6 +68,25 @@ class MainActivity : Activity() {
 	override fun onDestroy() {
 		super.onDestroy()
 		receiver?.let { unregisterReceiver(it) }
+	}
+
+	override fun onResume() {
+		super.onResume()
+		// ACTION_BATTERY_CHANGED is sticky, so registerReceiver returns the current reading.
+		registerReceiver(batteryReceiver, IntentFilter(Intent.ACTION_BATTERY_CHANGED))?.let { readBattery(it) }
+	}
+
+	override fun onPause() {
+		super.onPause()
+		unregisterReceiver(batteryReceiver)
+	}
+
+	private fun readBattery(i: Intent) {
+		val level = i.getIntExtra(BatteryManager.EXTRA_LEVEL, -1)
+		val scale = i.getIntExtra(BatteryManager.EXTRA_SCALE, 100)
+		if (level >= 0 && scale > 0) batteryLevel = level * 100 / scale
+		batteryCharging = i.getIntExtra(BatteryManager.EXTRA_PLUGGED, 0) != 0
+		battery?.set(batteryLevel, batteryCharging)
 	}
 
 	override fun onWindowFocusChanged(focus: Boolean) {
@@ -143,8 +172,8 @@ class MainActivity : Activity() {
 		text = s
 	}
 
-	// Palm title row, as in Datebook: a black tab with the current time (a tap opens the menu), and the
-	// category trigger at the right.
+	// Palm title row, as in Datebook: a black tab with the current time (a tap opens the menu), the battery
+	// gauge, and the category trigger at the right.
 	private fun topBar(): LinearLayout {
 		val clock = TextClock(this).apply {
 			format12Hour = "h:mm a"
@@ -165,11 +194,15 @@ class MainActivity : Activity() {
 			setPadding(pp(1f), pp(1f), pp(2f), pp(1f))
 			setOnClickListener { categoryMenu(it) }
 		}
+		// The gauge is a local val too: a mutable property does not smart-cast to non-null for addView.
+		val gauge = BatteryGauge(this, { pp(it).toFloat() }, paper()).also { it.set(batteryLevel, batteryCharging) }
+		battery = gauge
 		return LinearLayout(this).apply {
 			orientation = LinearLayout.HORIZONTAL
 			setPadding(0, 0, pp(1f), 0)
 			setBackgroundColor(paper())
 			addView(clock, lp(wrap, wrap).apply { marginStart = pp(1f); gravity = Gravity.BOTTOM })
+			addView(gauge, lp(wrap, wrap).apply { marginStart = pp(4f); gravity = Gravity.CENTER_VERTICAL })
 			// A plain View with WRAP_CONTENT takes all the height it is offered, so the spacer gets 0.
 			addView(View(this@MainActivity), lp(0, 0, 1f))
 			addView(category, lp(wrap, wrap).apply { gravity = Gravity.BOTTOM })
