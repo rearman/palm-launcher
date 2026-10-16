@@ -202,7 +202,17 @@ class MainActivity : Activity() {
 			setPadding(0, 0, pp(1f), 0)
 			setBackgroundColor(paper())
 			addView(clock, lp(wrap, wrap).apply { marginStart = pp(1f); gravity = Gravity.BOTTOM })
-			addView(gauge, lp(wrap, wrap).apply { marginStart = pp(4f); gravity = Gravity.CENTER_VERTICAL })
+			val gaugeLp = lp(wrap, wrap).apply { marginStart = pp(4f); gravity = Gravity.CENTER_VERTICAL }
+			addView(gauge, gaugeLp)
+			// As on the Palm IIIxe, the gauge starts at Palm x 53, or 4 px after a wider clock tab.
+			clock.addOnLayoutChangeListener { _, _, _, right, _, _, _, _, _ ->
+				val margin = maxOf(pp(4f), pp(53f) - right)
+				if (gaugeLp.marginStart != margin) {
+					gaugeLp.marginStart = margin
+					// A new layout cannot start inside this layout pass, so post it.
+					gauge.post { gauge.layoutParams = gaugeLp }
+				}
+			}
 			// A plain View with WRAP_CONTENT takes all the height it is offered, so the spacer gets 0.
 			addView(View(this@MainActivity), lp(0, 0, 1f))
 			addView(category, lp(wrap, wrap).apply { gravity = Gravity.BOTTOM })
