@@ -18,6 +18,7 @@ import android.view.Window
 import android.view.WindowManager
 import android.widget.FrameLayout
 import android.widget.LinearLayout
+import kotlin.math.ceil
 
 private const val MATCH = ViewGroup.LayoutParams.MATCH_PARENT
 private const val WRAP = ViewGroup.LayoutParams.WRAP_CONTENT
@@ -123,6 +124,9 @@ class MenuBar(
 		r.addView(act.text(key.toString(), bold = true).apply {
 			setTextColor(colors)
 			isDuplicateParentStateEnabled = true
+			// The letters line up at the right: each one is right-aligned in the width of a "W".
+			gravity = Gravity.END
+			width = ceil(paint.measureText("W")).toInt()
 		})
 		return r
 	}
