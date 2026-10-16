@@ -37,6 +37,8 @@ class MainActivity : Activity() {
 	private var scroll: ScrollView? = null
 	// The battery gauge in the header and its last reading (ACTION_BATTERY_CHANGED, while resumed).
 	private var battery: BatteryGauge? = null
+	// The last gauge margin after the clock tab. A new header starts with it, so the gauge does not jump.
+	private var gaugeMargin = 0
 	private var batteryLevel = 100
 	private var batteryCharging = false
 	private val batteryReceiver = object : BroadcastReceiver() {
@@ -203,11 +205,12 @@ class MainActivity : Activity() {
 			setPadding(0, 0, pp(1f), 0)
 			setBackgroundColor(paper())
 			addView(clock, lp(wrap, wrap).apply { marginStart = pp(1f); gravity = Gravity.BOTTOM })
-			val gaugeLp = lp(wrap, wrap).apply { marginStart = pp(4f); gravity = Gravity.CENTER_VERTICAL }
+			val gaugeLp = lp(wrap, wrap).apply { marginStart = if (gaugeMargin > 0) gaugeMargin else pp(4f); gravity = Gravity.CENTER_VERTICAL }
 			addView(gauge, gaugeLp)
 			// As on the Palm IIIxe, the gauge starts at Palm x 53, or 4 px after a wider clock tab.
 			clock.addOnLayoutChangeListener { _, _, _, right, _, _, _, _, _ ->
 				val margin = maxOf(pp(4f), pp(53f) - right)
+				gaugeMargin = margin
 				if (gaugeLp.marginStart != margin) {
 					gaugeLp.marginStart = margin
 					// A new layout cannot start inside this layout pass, so post it.
