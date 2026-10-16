@@ -19,6 +19,7 @@ import android.text.TextUtils
 import android.text.style.RelativeSizeSpan
 import android.util.TypedValue
 import android.view.Gravity
+import android.view.KeyEvent
 import android.view.View
 import android.view.ViewGroup
 import android.view.WindowManager
@@ -106,6 +107,14 @@ class MainActivity : Activity() {
 			save()
 			render()
 		}
+	}
+
+	// Ctrl and a command letter runs the menu command, as the Palm command stroke does.
+	override fun dispatchKeyEvent(event: KeyEvent): Boolean {
+		if (event.action == KeyEvent.ACTION_DOWN && event.isCtrlPressed && event.repeatCount == 0) {
+			commandKey(event.keyCode)?.let { k -> menus().command(k) }?.let { it.action(); return true }
+		}
+		return super.dispatchKeyEvent(event)
 	}
 
 	// Back does nothing on the home screen.
@@ -233,32 +242,32 @@ class MainActivity : Activity() {
 
 	// The Palm menu bar, after the Palm OS 3.5 Applications menus. Each App command opens a list of
 	// the apps in the selected category.
-	private fun showMenu() {
+	private fun menus(): List<Pair<String, List<MenuItem>>> {
 		val shown = state.filter(apps, { it.component }, { it.label })
-		val app: List<Pair<String, () -> Unit>> = listOf(
-			"Category..." to { pickApp(this, shown, "Category") { changeCategory(it) } },
-			"Info..." to { pickApp(this, shown, "Info") { showInfo(it) } },
-			"Delete..." to { pickApp(this, shown, "Delete") { deleteApp(it) } },
+		val app: List<MenuItem> = listOf(
+			MenuItem("Category...", 'Y') { pickApp(this, shown, "Category") { changeCategory(it) } },
+			MenuItem("Info...", 'I') { pickApp(this, shown, "Info") { showInfo(it) } },
+			MenuItem("Delete...", 'D') { pickApp(this, shown, "Delete") { deleteApp(it) } },
 		)
-		val options: List<Pair<String, () -> Unit>> = listOf(
-			(if (state.viewMode == ViewMode.GRID) "View as List" else "View as Grid") to {
+		val options: List<MenuItem> = listOf(
+			MenuItem(if (state.viewMode == ViewMode.GRID) "View as List" else "View as Grid") {
 				state.viewMode = if (state.viewMode == ViewMode.GRID) ViewMode.LIST else ViewMode.GRID
 				save()
 				render()
 			},
-			(if (state.wallpaper) "✓ Wallpaper" else "Wallpaper") to {
+			MenuItem(if (state.wallpaper) "✓ Wallpaper" else "Wallpaper") {
 				state.wallpaper = !state.wallpaper
 				save()
 				render(keepScroll = true)
 			},
-			"Text Size..." to {
+			MenuItem("Text Size...") {
 				pickSize(this, "Text Size", state.textSize) { s ->
 					state.textSize = s
 					save()
 					render(keepScroll = true)
 				}
 			},
-			"Icon Size..." to {
+			MenuItem("Icon Size...") {
 				pickSize(this, "Icon Size", state.iconSize) { s ->
 					state.iconSize = s
 					save()
@@ -267,15 +276,17 @@ class MainActivity : Activity() {
 			},
 			// The system wallpaper picker sets the home screen and lock screen wallpapers.
 			// The launcher turns Wallpaper on, so the new home screen wallpaper shows.
-			"Change Wallpaper..." to {
+			MenuItem("Change Wallpaper...") {
 				state.wallpaper = true
 				save()
 				render(keepScroll = true)
 				startSafely(Intent(Intent.ACTION_SET_WALLPAPER))
 			},
 		)
-		MenuBar(this, listOf("App" to app, "Options" to options)).show()
+		return listOf("App" to app, "Options" to options)
 	}
+
+	private fun showMenu() = MenuBar(this, menus()).show()
 
 	private fun categoryMenu(anchor: View) {
 		// Item indexes are positions in ids; the last item is "Edit Categories...".
