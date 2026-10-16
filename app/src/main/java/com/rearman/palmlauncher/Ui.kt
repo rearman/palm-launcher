@@ -36,11 +36,11 @@ internal fun MainActivity.pp(v: Float): Int {
 	return if (v <= 0f) 0 else maxOf(1, Math.round(v * minOf(dm.widthPixels, dm.heightPixels) / 160f))
 }
 
-// A Datebook box: `fill` inside a 1 Palm px black line, with 1.5 Palm px corners.
-internal fun MainActivity.palmBox(fill: Int): GradientDrawable = GradientDrawable().apply {
+// A Datebook box: `fill` inside a 1 Palm px black line, with `radius` Palm px corners.
+internal fun MainActivity.palmBox(fill: Int, radius: Float = 1.5f): GradientDrawable = GradientDrawable().apply {
 	setColor(fill)
 	setStroke(pp(1f), Color.BLACK)
-	cornerRadius = pp(1.5f).toFloat()
+	cornerRadius = pp(radius).toFloat()
 }
 
 // Black text in the launcher font.
@@ -155,14 +155,18 @@ class PalmDialog(private val act: MainActivity, title: String) : Dialog(act) {
 		return ed
 	}
 
-	// A command button in the Palm oval, in the bottom row. It is inverted while pressed.
+	// A command button as the Datebook palmButton: the Palm oval (1 px line, 3.5 px corners), 12 Palm px
+	// high and at least 16 wide, in the regular font. It is inverted while pressed.
 	fun button(s: String, onClick: () -> Unit) {
 		val b = act.text(s).apply {
 			gravity = Gravity.CENTER
-			setPadding(act.dp(12), act.dp(4), act.dp(12), act.dp(4))
+			setPadding(act.pp(2f), 0, act.pp(2f), 0)
+			minHeight = act.pp(12f)
+			minimumHeight = act.pp(12f)
+			minWidth = act.pp(16f)
 			background = StateListDrawable().apply {
-				addState(intArrayOf(android.R.attr.state_pressed), act.box(Color.BLACK, 12))
-				addState(intArrayOf(), act.box(act.paper(), 12))
+				addState(intArrayOf(android.R.attr.state_pressed), act.palmBox(Color.BLACK, 3.5f))
+				addState(intArrayOf(), act.palmBox(act.paper(), 3.5f))
 			}
 			setTextColor(ColorStateList(
 				arrayOf(intArrayOf(android.R.attr.state_pressed), intArrayOf()),
@@ -170,6 +174,6 @@ class PalmDialog(private val act: MainActivity, title: String) : Dialog(act) {
 			))
 			setOnClickListener { onClick() }
 		}
-		buttons.addView(b, LinearLayout.LayoutParams(WRAP, WRAP).apply { marginEnd = act.dp(8) })
+		buttons.addView(b, LinearLayout.LayoutParams(WRAP, WRAP).apply { marginEnd = act.pp(4f) })
 	}
 }
