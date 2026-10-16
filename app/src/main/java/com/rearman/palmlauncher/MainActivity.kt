@@ -52,6 +52,7 @@ class MainActivity : Activity() {
 		reload()
 		receiver = Apps.watch(this) { reload(); render(keepScroll = true) }
 		render()
+		hideStatusBar()
 	}
 
 	override fun onDestroy() {
@@ -62,6 +63,7 @@ class MainActivity : Activity() {
 	override fun onWindowFocusChanged(focus: Boolean) {
 		super.onWindowFocusChanged(focus)
 		hasFocus = focus
+		if (focus) hideStatusBar()
 	}
 
 	override fun onNewIntent(intent: Intent) {
@@ -110,7 +112,10 @@ class MainActivity : Activity() {
 		root.addView(area, lp(match, 0, 1f))
 		root.addView(rule(), lp(match, dp(1)))
 		root.addView(dock(), lp(match, wrap))
-		setContentView(root)
+		// A swipe down on the header, or on the app list at its top, opens the notification shade.
+		val frame = SwipeDownFrame(this, { (scroll?.scrollY ?: 0) == 0 }) { expandNotifications() }
+		frame.addView(root, FrameLayout.LayoutParams(match, match))
+		setContentView(frame)
 		window.decorView.setBackgroundColor(back)
 		// The new list has no height until layout, so scroll after it.
 		if (y > 0) area.post { area.scrollTo(0, y) }
@@ -168,6 +173,14 @@ class MainActivity : Activity() {
 			// A plain View with WRAP_CONTENT takes all the height it is offered, so the spacer gets 0.
 			addView(View(this@MainActivity), lp(0, 0, 1f))
 			addView(category, lp(wrap, wrap).apply { gravity = Gravity.BOTTOM })
+			// The header is at the top edge: keep it clear of the rounded corners and a corner camera.
+			setOnApplyWindowInsetsListener { v, insets ->
+				val w = if (v.width > 0) v.width else resources.displayMetrics.widthPixels
+				val h = if (v.height > 0) v.height else pp(13f)
+				val (left, right) = headerSidePadding(insets, w, h)
+				v.setPadding(left, 0, maxOf(pp(1f), right), 0)
+				insets
+			}
 		}
 	}
 

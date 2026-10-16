@@ -24,6 +24,10 @@ fun columnWidths(entryWidths: List<Int>, cols: Int, max: Int): IntArray? {
 	return if (w.sum() <= max) w else null
 }
 
+// A drag of (dx, dy) px is a swipe down when it goes at least `min` px down and more than twice as
+// far down as sideways.
+fun swipeDown(dx: Float, dy: Float, min: Float): Boolean = dy >= min && dy > 2 * kotlin.math.abs(dx)
+
 data class Category(val id: Int, val name: String)
 
 class LauncherState(

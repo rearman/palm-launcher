@@ -222,4 +222,13 @@ class ModelTest {
 		assertArrayEquals(intArrayOf(0, 0), columnWidths(emptyList(), 2, 100))
 		assertNull(columnWidths(listOf(60, 50), 2, 100))
 	}
+
+	@Test
+	fun swipeDownNeedsDistanceAndDirection() {
+		assertTrue(swipeDown(0f, 50f, 48f))
+		assertTrue(swipeDown(20f, 50f, 48f))
+		assertFalse(swipeDown(0f, 40f, 48f))
+		assertFalse(swipeDown(30f, 50f, 48f))
+		assertFalse(swipeDown(0f, -60f, 48f))
+	}
 }

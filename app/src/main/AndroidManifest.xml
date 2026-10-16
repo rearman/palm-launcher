@@ -11,6 +11,9 @@
 
 	<uses-permission android:name="android.permission.REQUEST_DELETE_PACKAGES" />
 
+	<!-- A swipe down on the launcher opens the notification shade (expandNotifications). -->
+	<uses-permission android:name="android.permission.EXPAND_STATUS_BAR" />
+
 	<application
 		android:allowBackup="true"
 		android:icon="@android:drawable/sym_def_app_icon"
