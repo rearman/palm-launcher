@@ -6,6 +6,7 @@ import android.content.BroadcastReceiver
 import android.content.Intent
 import android.graphics.Color
 import android.graphics.Typeface
+import android.graphics.drawable.GradientDrawable
 import android.net.Uri
 import android.os.Bundle
 import android.provider.Settings
@@ -22,6 +23,7 @@ import android.widget.FrameLayout
 import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.ScrollView
+import android.widget.TextClock
 import android.widget.TextView
 
 class MainActivity : Activity() {
@@ -103,7 +105,8 @@ class MainActivity : Activity() {
 		val area = appArea()
 		scroll = area
 		root.addView(topBar(), lp(match, wrap))
-		root.addView(rule(), lp(match, dp(1)))
+		// The 2 Palm px title line, as in Datebook.
+		root.addView(rule(), lp(match, pp(2f)))
 		root.addView(area, lp(match, 0, 1f))
 		root.addView(rule(), lp(match, dp(1)))
 		root.addView(dock(), lp(match, wrap))
@@ -135,72 +138,88 @@ class MainActivity : Activity() {
 		text = s
 	}
 
+	// Palm title row, as in Datebook: a black tab with the current time (a tap opens the menu), and the
+	// category trigger at the right.
 	private fun topBar(): LinearLayout {
-		val menu = TextView(this).apply {
-			text = "Menu"
+		val clock = TextClock(this).apply {
+			format12Hour = "h:mm a"
+			format24Hour = "H:mm"
 			font(bold = true)
-			setOnClickListener { viewMenu(it) }
+			setTextColor(paper())
+			val r = pp(3f).toFloat()
+			background = GradientDrawable().apply {
+				setColor(Color.BLACK)
+				cornerRadii = floatArrayOf(r, r, r, r, 0f, 0f, 0f, 0f)
+			}
+			setPadding(pp(3f), pp(1f), pp(3f), pp(1f))
+			setOnClickListener { showMenu() }
 		}
 		val category = TextView(this).apply {
 			text = "▾ " + state.categoryName(state.selected)
-			font(bold = false)
+			font(bold = true)
+			setPadding(pp(1f), pp(1f), pp(2f), pp(1f))
 			setOnClickListener { categoryMenu(it) }
 		}
 		return LinearLayout(this).apply {
 			orientation = LinearLayout.HORIZONTAL
-			gravity = Gravity.CENTER_VERTICAL
-			setPadding(dp(8), dp(8), dp(8), dp(8))
+			setPadding(0, 0, pp(1f), 0)
 			setBackgroundColor(paper())
-			addView(menu, lp(wrap, wrap))
+			addView(clock, lp(wrap, wrap).apply { marginStart = pp(1f); gravity = Gravity.BOTTOM })
 			// A plain View with WRAP_CONTENT takes all the height it is offered, so the spacer gets 0.
 			addView(View(this@MainActivity), lp(0, 0, 1f))
-			addView(category, lp(wrap, wrap))
+			addView(category, lp(wrap, wrap).apply { gravity = Gravity.BOTTOM })
 		}
 	}
 
-	private fun viewMenu(anchor: View) {
-		val items = listOf(
-			if (state.viewMode == ViewMode.GRID) "View as List" else "View as Grid",
-			"Green LCD", "Wallpaper", "Text Size...", "Icon Size...", "Change Wallpaper...",
+	// The Palm menu bar, after the Palm OS 3.5 Applications menus. Each App command opens a list of
+	// the apps in the selected category.
+	private fun showMenu() {
+		val shown = state.filter(apps, { it.component }, { it.label })
+		val app: List<Pair<String, () -> Unit>> = listOf(
+			"Category..." to { pickApp(this, shown, "Category") { changeCategory(it) } },
+			"Info..." to { pickApp(this, shown, "Info") { showInfo(it) } },
+			"Delete..." to { pickApp(this, shown, "Delete") { deleteApp(it) } },
 		)
-		val checked = setOfNotNull(1.takeIf { state.green }, 2.takeIf { state.wallpaper })
-		popupList(anchor, items, checked) { i ->
-			when (i) {
-				0 -> {
-					state.viewMode = if (state.viewMode == ViewMode.GRID) ViewMode.LIST else ViewMode.GRID
-					save()
-					render()
-				}
-				1 -> {
-					state.green = !state.green
-					save()
-					render()
-				}
-				2 -> {
-					state.wallpaper = !state.wallpaper
-					save()
-					render(keepScroll = true)
-				}
-				3 -> pickSize(this, "Text Size", state.textSize) { s ->
+		val options: List<Pair<String, () -> Unit>> = listOf(
+			(if (state.viewMode == ViewMode.GRID) "View as List" else "View as Grid") to {
+				state.viewMode = if (state.viewMode == ViewMode.GRID) ViewMode.LIST else ViewMode.GRID
+				save()
+				render()
+			},
+			(if (state.green) "✓ Green LCD" else "Green LCD") to {
+				state.green = !state.green
+				save()
+				render()
+			},
+			(if (state.wallpaper) "✓ Wallpaper" else "Wallpaper") to {
+				state.wallpaper = !state.wallpaper
+				save()
+				render(keepScroll = true)
+			},
+			"Text Size..." to {
+				pickSize(this, "Text Size", state.textSize) { s ->
 					state.textSize = s
 					save()
 					render(keepScroll = true)
 				}
-				4 -> pickSize(this, "Icon Size", state.iconSize) { s ->
+			},
+			"Icon Size..." to {
+				pickSize(this, "Icon Size", state.iconSize) { s ->
 					state.iconSize = s
 					save()
 					render(keepScroll = true)
 				}
-				// The system wallpaper picker sets the home screen and lock screen wallpapers.
-				// The launcher turns Wallpaper on, so the new home screen wallpaper shows.
-				5 -> {
-					state.wallpaper = true
-					save()
-					render(keepScroll = true)
-					startSafely(Intent(Intent.ACTION_SET_WALLPAPER))
-				}
-			}
-		}
+			},
+			// The system wallpaper picker sets the home screen and lock screen wallpapers.
+			// The launcher turns Wallpaper on, so the new home screen wallpaper shows.
+			"Change Wallpaper..." to {
+				state.wallpaper = true
+				save()
+				render(keepScroll = true)
+				startSafely(Intent(Intent.ACTION_SET_WALLPAPER))
+			},
+		)
+		MenuBar(this, listOf("App" to app, "Options" to options)).show()
 	}
 
 	private fun categoryMenu(anchor: View) {
@@ -286,23 +305,29 @@ class MainActivity : Activity() {
 		val labels = listOf("Category...", "Dock 1", "Dock 2", "Dock 3", "Dock 4", "Info", "Delete")
 		popupList(anchor, labels) { i ->
 			when (i) {
-				0 -> pickCategory(this, state, state.categoryOf(e.component)) { id ->
-					state.assign(e.component, id)
-					save()
-					render(keepScroll = true)
-				}
+				0 -> changeCategory(e)
 				1, 2, 3, 4 -> {
 					state.dock[i - 1] = e.component
 					save()
 					render(keepScroll = true)
 				}
-				5 -> startSafely(Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
-					Uri.fromParts("package", e.packageName, null)))
-				6 -> startSafely(Intent(Intent.ACTION_DELETE,
-					Uri.fromParts("package", e.packageName, null)))
+				5 -> showInfo(e)
+				6 -> deleteApp(e)
 			}
 		}
 	}
+
+	private fun changeCategory(e: AppEntry) = pickCategory(this, state, state.categoryOf(e.component)) { id ->
+		state.assign(e.component, id)
+		save()
+		render(keepScroll = true)
+	}
+
+	private fun showInfo(e: AppEntry) = startSafely(Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
+		Uri.fromParts("package", e.packageName, null)))
+
+	private fun deleteApp(e: AppEntry) = startSafely(Intent(Intent.ACTION_DELETE,
+		Uri.fromParts("package", e.packageName, null)))
 
 	private fun startSafely(intent: Intent) {
 		try {

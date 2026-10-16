@@ -18,6 +18,14 @@ fun pickSize(act: MainActivity, title: String, current: Size, onPick: (Size) -> 
 	d.show()
 }
 
+// A list of `apps` in the given order. A tap closes the form and calls onPick(app).
+fun pickApp(act: MainActivity, apps: List<AppEntry>, title: String, onPick: (AppEntry) -> Unit) {
+	val d = PalmDialog(act, title)
+	for (a in apps) d.item(a.label) { d.dismiss(); onPick(a) }
+	d.button("Cancel") { d.dismiss() }
+	d.show()
+}
+
 // Palm "Edit Categories". Calls onChange() after each change (caller saves and redraws).
 fun editCategories(act: MainActivity, state: LauncherState, onChange: () -> Unit) {
 	val d = PalmDialog(act, "Edit Categories")

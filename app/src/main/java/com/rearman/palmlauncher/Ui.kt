@@ -30,6 +30,19 @@ internal fun MainActivity.box(fill: Int, radiusDp: Int): GradientDrawable = Grad
 	cornerRadius = dp(radiusDp).toFloat()
 }
 
+// Palm px: the shorter screen side is 160 Palm px, as in Datebook.
+internal fun MainActivity.pp(v: Float): Int {
+	val dm = resources.displayMetrics
+	return if (v <= 0f) 0 else maxOf(1, Math.round(v * minOf(dm.widthPixels, dm.heightPixels) / 160f))
+}
+
+// A Datebook box: `fill` inside a 1 Palm px black line, with 1.5 Palm px corners.
+internal fun MainActivity.palmBox(fill: Int): GradientDrawable = GradientDrawable().apply {
+	setColor(fill)
+	setStroke(pp(1f), Color.BLACK)
+	cornerRadius = pp(1.5f).toFloat()
+}
+
 // Black text in the launcher font.
 internal fun MainActivity.text(s: CharSequence, bold: Boolean = false): TextView = TextView(this).apply {
 	text = s
@@ -37,19 +50,23 @@ internal fun MainActivity.text(s: CharSequence, bold: Boolean = false): TextView
 	font(bold)
 }
 
-// A Palm pop-up list at `anchor`. Items in `checked` get a check mark. A tap closes the list, then
-// calls onPick(index).
+// A Palm pop-up list at `anchor`. Items in `checked` show inverted and bold, as the Datebook selected
+// item. A tap closes the list, then calls onPick(index).
 internal fun MainActivity.popupList(anchor: View, items: List<String>, checked: Set<Int> = emptySet(), onPick: (Int) -> Unit) {
 	val col = LinearLayout(this).apply {
 		orientation = LinearLayout.VERTICAL
-		background = box(paper(), 3)
-		setPadding(dp(1), dp(1), dp(1), dp(1))
+		background = palmBox(paper())
+		setPadding(pp(1f), pp(1f), pp(1f), pp(1f))
 	}
 	val sv = ScrollView(this).apply { addView(col); isVerticalScrollBarEnabled = false }
 	val pw = PopupWindow(sv, WRAP, WRAP, true)
 	items.forEachIndexed { i, s ->
-		col.addView(text(if (i in checked) "✓ $s" else s).apply {
-			setPadding(dp(12), dp(8), dp(24), dp(8))
+		col.addView(text(s, bold = i in checked).apply {
+			setPadding(pp(3f), pp(1f), pp(8f), pp(1f))
+			if (i in checked) {
+				setBackgroundColor(Color.BLACK)
+				setTextColor(paper())
+			}
 			setOnClickListener { pw.dismiss(); onPick(i) }
 		}, LinearLayout.LayoutParams(MATCH, WRAP))
 	}
