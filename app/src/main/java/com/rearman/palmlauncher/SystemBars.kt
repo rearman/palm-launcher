@@ -7,29 +7,33 @@ import android.os.Build
 import android.view.MotionEvent
 import android.view.RoundedCorner
 import android.view.View
+import android.view.Window
 import android.view.WindowInsets
 import android.view.WindowInsetsController
 import android.view.WindowManager
 import android.widget.FrameLayout
 import kotlin.math.sqrt
 
-// Hides the status bar. A swipe from the top edge shows it for a moment, as in full-screen apps.
-// The window also draws into the camera cutout, so the Palm header covers the status bar area.
-// Call it after setContentView and again on each window focus: Android 10 and earlier clear the flags.
-fun Activity.hideStatusBar() {
+fun Activity.hideStatusBar() = window.hideStatusBar()
+
+// Hides the status bar in this window. A swipe from the top edge shows it for a moment, as in
+// full-screen apps. The window also draws into the camera cutout, so the Palm header covers the
+// status bar area. Call it after setContentView, for each window that shows (the activity, the menu
+// bar and the dialogs), and again on each activity focus: Android 10 and earlier clear the flags.
+fun Window.hideStatusBar() {
 	if (Build.VERSION.SDK_INT >= 28) {
-		window.attributes = window.attributes.apply {
+		attributes = attributes.apply {
 			layoutInDisplayCutoutMode = WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES
 		}
 	}
 	if (Build.VERSION.SDK_INT >= 30) {
-		window.insetsController?.let {
+		insetsController?.let {
 			it.hide(WindowInsets.Type.statusBars())
 			it.systemBarsBehavior = WindowInsetsController.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
 		}
 	} else {
 		@Suppress("DEPRECATION")
-		window.decorView.systemUiVisibility = View.SYSTEM_UI_FLAG_FULLSCREEN or View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
+		decorView.systemUiVisibility = View.SYSTEM_UI_FLAG_FULLSCREEN or View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
 	}
 }
 

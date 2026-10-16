@@ -118,6 +118,8 @@ class PalmDialog(private val act: MainActivity, title: String) : Dialog(act) {
 			w.setLayout(minOf(dm.widthPixels, dm.heightPixels) * 156 / 160, WindowManager.LayoutParams.WRAP_CONTENT)
 			w.setGravity(Gravity.BOTTOM or Gravity.CENTER_HORIZONTAL)
 			w.clearFlags(WindowManager.LayoutParams.FLAG_DIM_BEHIND)
+			// A dialog is a window of its own: hide the status bar in it too, as the launcher does.
+			w.hideStatusBar()
 		}
 	}
 
