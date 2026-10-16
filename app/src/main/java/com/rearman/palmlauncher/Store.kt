@@ -38,7 +38,6 @@ object Store {
 			.put("dock", dock)
 			.put("selected", s.selected)
 			.put("viewMode", s.viewMode.name)
-			.put("green", s.green)
 			.put("textSize", s.textSize.name)
 			.put("iconSize", s.iconSize.name)
 			.put("wallpaper", s.wallpaper)
@@ -73,9 +72,10 @@ object Store {
 			}
 		}
 
-		// opt*: state saved by older builds has no "green", "textSize", "iconSize" or "wallpaper" key, and get* would throw.
+		// opt*: state saved by older builds has no "textSize", "iconSize" or "wallpaper" key, and get* would throw.
 		// optString gives "" for a missing key, and Size.of("") gives NORMAL.
 		// A "palmFont" key from older builds is ignored: the Palm OS font is always on.
+		// A "green" key from older builds is ignored: the screen is always Green LCD.
 		return LauncherState(
 			categories,
 			assignments,
@@ -83,7 +83,6 @@ object Store {
 			o.getInt("selected"),
 			ViewMode.valueOf(o.getString("viewMode")),
 		).apply {
-			green = o.optBoolean("green", false)
 			textSize = Size.of(o.optString("textSize"))
 			iconSize = Size.of(o.optString("iconSize"))
 			wallpaper = o.optBoolean("wallpaper", false)

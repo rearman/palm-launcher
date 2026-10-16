@@ -54,9 +54,9 @@ class MainActivity : Activity() {
 
 	fun dp(v: Int) = (v * resources.displayMetrics.density).toInt()
 
-	// The green is the Green LCD paper color of the Datebook app.
-	internal fun paper() = if (state.green) 0xFFC9D3A8.toInt() else Color.WHITE
-	private fun dockColor() = if (state.green) 0xFFB5BF94.toInt() else 0xFFEEEEEE.toInt()
+	// The screen is always Green LCD: the paper color of the Datebook app, and a darker green for the dock.
+	internal fun paper() = 0xFFC9D3A8.toInt()
+	private fun dockColor() = 0xFFB5BF94.toInt()
 
 	override fun onCreate(savedInstanceState: Bundle?) {
 		super.onCreate(savedInstanceState)
@@ -243,11 +243,6 @@ class MainActivity : Activity() {
 		val options: List<Pair<String, () -> Unit>> = listOf(
 			(if (state.viewMode == ViewMode.GRID) "View as List" else "View as Grid") to {
 				state.viewMode = if (state.viewMode == ViewMode.GRID) ViewMode.LIST else ViewMode.GRID
-				save()
-				render()
-			},
-			(if (state.green) "✓ Green LCD" else "Green LCD") to {
-				state.green = !state.green
 				save()
 				render()
 			},

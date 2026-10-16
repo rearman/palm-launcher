@@ -37,7 +37,6 @@ class LauncherState(
 	var selected: Int,                         // ALL or a category id
 	var viewMode: ViewMode,
 ) {
-	var green = false  // Green LCD screen colors (saved by Store).
 	var textSize = Size.NORMAL  // Size of all launcher text (saved by Store).
 	var iconSize = Size.NORMAL  // App and dock icon size (saved by Store).
 	var wallpaper = false  // The system wallpaper shows behind the app list (saved by Store).

@@ -141,11 +141,6 @@ class ModelTest {
 	}
 
 	@Test
-	fun greenDefaultsToFalse() {
-		assertFalse(LauncherState.defaults().green)
-	}
-
-	@Test
 	fun renameCategoryChangesNameExceptUnfiled() {
 		val s = LauncherState.defaults()
 		s.renameCategory(1, "Gaming")
